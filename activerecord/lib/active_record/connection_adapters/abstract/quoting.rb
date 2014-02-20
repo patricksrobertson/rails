@@ -13,14 +13,7 @@ module ActiveRecord
         when String, ActiveSupport::Multibyte::Chars
           value = value.to_s
           return "'#{quote_string(value)}'" unless column
-
-          case column.type
-          when :integer then value.to_i.to_s
-          when :float then value.to_f.to_s
-          else
-            "'#{quote_string(value)}'"
-          end
-
+          coerce_from_string(value, column.type)
         when true, false
           if column && column.type == :integer
             value ? '1' : '0'
@@ -123,6 +116,22 @@ module ActiveRecord
         end
 
         value.to_s(:db)
+      end
+
+      private
+
+      def coerce_from_string(value, coerce_type)
+        case coerce_type
+        when :integer
+          split_value = value.split('.').first
+          Integer(split_value).to_s
+        when :float
+          Float(value).to_s
+        else
+	  "'#{quote_string(value)}'"
+        end
+      rescue ArgumentError
+        "'#{quote_string(value)}'"
       end
     end
   end
